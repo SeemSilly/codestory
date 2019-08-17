@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="DEBUG" name="codeStoryLogger">
+    <appenders>
+        <Console name="stdout">
+            <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="%d{mm:ss.SSS} [%p] %c{1}.%M(%L) %m%n"/>
+        </Console>
+    </appenders>
+    <ThresholdFilter level="TRACE"/>
+    <loggers>
+        <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR" additivity="false">
+            <appender-ref ref="stdout" />
+        </logger>
+
+        <logger name="org.apache.zookeeper" level="TRACE" additivity="false">
+            <appender-ref ref="stdout"/>
+        </logger>
+        <logger name="tech.codestory" level="TRACE" additivity="false">
+            <appender-ref ref="stdout"/>
+        </logger>
+        <root level="WARN">
+            <appender-ref ref="stdout"/>
+        </root>
+    </loggers>
+</configuration>
