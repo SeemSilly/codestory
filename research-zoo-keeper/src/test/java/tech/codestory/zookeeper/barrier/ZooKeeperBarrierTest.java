@@ -3,6 +3,7 @@ package tech.codestory.zookeeper.barrier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 import org.testng.annotations.Test;
+import tech.codestory.zookeeper.TestBase;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -16,14 +17,13 @@ import static org.testng.Assert.*;
  * @date 2019/8/15
  */
 @Slf4j
-public class ZooKeeperBarrierTest {
+public class ZooKeeperBarrierTest extends TestBase {
     Random random = new SecureRandom();
 
     @Test
     public void testBarrierTest() throws IOException {
         /** 等待连接建立成功的信号 */
 
-        String address = "192.168.5.128:2181";
         String barrierName = "/table-" + random.nextInt(10);
         int barrierSize = 4;
 

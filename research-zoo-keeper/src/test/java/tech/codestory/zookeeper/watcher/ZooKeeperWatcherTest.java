@@ -1,8 +1,14 @@
 package tech.codestory.zookeeper.watcher;
 
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import org.apache.zookeeper.WatchedEvent;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import lombok.extern.slf4j.Slf4j;
+import tech.codestory.zookeeper.TestBase;
+import tech.codestory.zookeeper.ZooKeeperBase;
 
 /**
  * @author junyongliao
@@ -10,13 +16,14 @@ import static org.testng.Assert.*;
  * @since 1.0.0
  */
 @Slf4j
-public class ZooKeeperWatcherTest {
+public class ZooKeeperWatcherTest extends TestBase {
+
     @Test
     public void testWatcher() {
-        String hostPort = "192.168.5.128:2181";
-        String zNode = "/watcher";
+        final String zNode = "/watcher";
         try {
-            new ZooKeeperWatcher(hostPort, zNode).run();
+            ZooKeeperWatcher zooKeeperWatcher = new ZooKeeperWatcher(address, zNode);
+            zooKeeperWatcher.run();
         } catch (Exception e) {
             log.error("new ZooKeeperExecutor()", e);
         }

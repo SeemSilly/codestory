@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.zookeeper.KeeperException;
 import org.testng.annotations.Test;
 import lombok.extern.slf4j.Slf4j;
+import tech.codestory.zookeeper.TestBase;
 
 /**
  * ZooKeeperQueue测试
@@ -15,14 +16,16 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2019/8/16
  */
 @Slf4j
-public class ZooKeeperQueueTest {
-    final String address = "192.168.5.128:2181";
+public class ZooKeeperQueueTest extends TestBase {
     final String queueName = "/queue";
     final Random random = new SecureRandom();
     // 随机生成10-20之间的个数
     final int count = 10 + random.nextInt(10);
     /** 等待生产者和消费者线程都结束 */
     private CountDownLatch connectedSemaphore = new CountDownLatch(2);
+
+    int producerCount = 0;
+    int consumerCount = 0;
 
     @Test
     public void testQueue() {
@@ -34,6 +37,9 @@ public class ZooKeeperQueueTest {
         } catch (InterruptedException e) {
             log.error("InterruptedException", e);
         }
+
+        assert producerCount == count;
+        assert consumerCount == count;
     }
 
     /**
@@ -50,6 +56,7 @@ public class ZooKeeperQueueTest {
                     long waitTime = random.nextInt(50) * 100;
                     log.info("生产对象 : {} , 然后等待 {} 毫秒", elementValue, waitTime);
                     queue.produce(elementValue);
+                    producerCount++;
                     Thread.sleep(waitTime);
                 }
             } catch (IOException e) {
@@ -77,8 +84,10 @@ public class ZooKeeperQueueTest {
                         int elementValue = queue.consume();
 
                         long waitTime = random.nextInt(50) * 100;
-                        log.info("消费对象: {} , 然后等待 {} 毫秒", elementValue, waitTime);
+                        log.info("消费对象 : {} , 然后等待 {} 毫秒", elementValue, waitTime);
                         Thread.sleep(waitTime);
+
+                        consumerCount++;
                     } catch (KeeperException e) {
                         i--;
                         log.error("KeeperException", e);

@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="zookeeper queue test suite" verbose="1">
+    <test name="ZooKeeper Queue Test Group">
+        <classes>
+            <class name="tech.codestory.zookeeper.queue.ZooKeeperQueueTest"></class>
+        </classes>
+    </test>
+</suite>

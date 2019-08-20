@@ -1,0 +1,10 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="zookeeper lock test suite" verbose="1">
+    <test name="ZooKeeper Lock Test Groups">
+        <classes>
+            <class name="tech.codestory.zookeeper.lock.NodeBlocklessLockTest"></class>
+            <class name="tech.codestory.zookeeper.lock.ChildrenBlocklessLockTest"></class>
+            <class name="tech.codestory.zookeeper.lock.ChildrenBlockingLockTest"></class>
+        </classes>
+    </test>
+</suite>

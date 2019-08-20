@@ -1,6 +1,8 @@
 package tech.codestory.zookeeper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
@@ -24,6 +26,9 @@ public class ZooKeeperBase implements Watcher {
     private ZooKeeper zooKeeper = null;
     /** 避免重复根节点 */
     static Integer rootNodeInitial = Integer.valueOf(1);
+
+    /** 收到的所有Event */
+    List<WatchedEvent> watchedEventList = new ArrayList<>();
 
     /** 构造函数 */
     public ZooKeeperBase(String address) throws IOException {
@@ -50,16 +55,28 @@ public class ZooKeeperBase implements Watcher {
      * @return
      */
     public String createRootNode(String rootNodeName) {
+        CreateMode createMode = CreateMode.PERSISTENT;
+        return createRootNode(rootNodeName, createMode);
+    }
+
+    /**
+     * 创建测试需要的根节点，需要指定 CreateMode
+     * 
+     * @param rootNodeName
+     * @param createMode
+     * @return
+     */
+    public String createRootNode(String rootNodeName, CreateMode createMode) {
         synchronized (rootNodeInitial) {
             // 创建 tableSerial 的zNode
             try {
                 Stat existsStat = getZooKeeper().exists(rootNodeName, false);
                 if (existsStat == null) {
                     rootNodeName = getZooKeeper().create(rootNodeName, new byte[0],
-                            ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            ZooDefs.Ids.OPEN_ACL_UNSAFE, createMode);
                 }
             } catch (KeeperException e) {
-                log.error("KeeperException", e);
+                log.info("创建节点失败，可能是其他客户端已经创建", e);
             } catch (InterruptedException e) {
                 log.error("InterruptedException", e);
             }
@@ -80,14 +97,18 @@ public class ZooKeeperBase implements Watcher {
                 // 连接建立成功
                 connectedSemaphore.countDown();
             }
-        } else if (Event.EventType.NodeCreated.equals(event.getType())) {
-            processNodeCreated(event);
-        } else if (Event.EventType.NodeDeleted.equals(event.getType())) {
-            processNodeDeleted(event);
-        } else if (Event.EventType.NodeDataChanged.equals(event.getType())) {
-            processNodeDataChanged(event);
-        } else if (Event.EventType.NodeChildrenChanged.equals(event.getType())) {
-            processNodeChildrenChanged(event);
+        } else {
+            watchedEventList.add(event);
+
+            if (Event.EventType.NodeCreated.equals(event.getType())) {
+                processNodeCreated(event);
+            } else if (Event.EventType.NodeDeleted.equals(event.getType())) {
+                processNodeDeleted(event);
+            } else if (Event.EventType.NodeDataChanged.equals(event.getType())) {
+                processNodeDataChanged(event);
+            } else if (Event.EventType.NodeChildrenChanged.equals(event.getType())) {
+                processNodeChildrenChanged(event);
+            }
         }
     }
 
@@ -118,4 +139,9 @@ public class ZooKeeperBase implements Watcher {
      * @param event
      */
     protected void processNodeChildrenChanged(WatchedEvent event) {}
+
+    /** 收到的所有 Event 列表 */
+    public List<WatchedEvent> getWatchedEventList() {
+        return watchedEventList;
+    }
 }
