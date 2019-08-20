@@ -23,16 +23,28 @@ public class ChildrenBlockingLockTest extends TestBase {
         String guidNodeName = "/guid-" + System.currentTimeMillis();
         String clientGuid = "client-0";
 
-        ChildrenBlockingLock nodeLock = new ChildrenBlockingLock(address);
+        ChildrenBlockingLock zooKeeperLock = new ChildrenBlockingLock(address);
 
-        boolean assertResult = nodeLock.lock(guidNodeName, clientGuid);
+        boolean assertResult = zooKeeperLock.exists(guidNodeName) == false;
+        log.info("锁还未生成，不存在。");
+        assert assertResult;
+
+        assertResult = zooKeeperLock.lock(guidNodeName, clientGuid);
         log.info("获取分布式锁应该成功。");
         assert assertResult;
 
-        // clientGuid 相同，释放锁
-        assertResult = nodeLock.release(guidNodeName, clientGuid) == true;
-        log.info("释放分布式锁，应该成功。");
+        assertResult = zooKeeperLock.exists(guidNodeName) == true;
+        log.info("锁已经生成。");
         assert assertResult;
+
+        assertResult = zooKeeperLock.release(guidNodeName, clientGuid) == true;
+        log.info("正常释放锁，应该成功。");
+        assert assertResult;
+
+        assertResult = zooKeeperLock.exists(guidNodeName) == false;
+        log.info("锁已被删除，应该不存在。");
+        assert assertResult;
+
     }
 
 

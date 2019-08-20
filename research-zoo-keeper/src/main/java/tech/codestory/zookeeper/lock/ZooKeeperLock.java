@@ -1,9 +1,10 @@
 package tech.codestory.zookeeper.lock;
 
 /**
- * @author junyongliao
+ * ZooKeeper锁的接口定义
+ * 
+ * @author javacodestory@gmail.com
  * @date 2019/8/19
- * @since 1.0.0
  */
 public interface ZooKeeperLock {
     /**
@@ -13,7 +14,7 @@ public interface ZooKeeperLock {
      * @param clientGuid 用于唯一标识当前客户端的ID
      * @return
      */
-    public boolean lock(String guidNodeName, String clientGuid);
+    boolean lock(String guidNodeName, String clientGuid);
 
     /**
      * 释放锁
@@ -22,5 +23,13 @@ public interface ZooKeeperLock {
      * @param clientGuid 用于唯一标识当前客户端的ID
      * @return
      */
-    public boolean release(String guidNodeName, String clientGuid);
+    boolean release(String guidNodeName, String clientGuid);
+
+    /**
+     * 锁是否已经存在
+     *
+     * @param guidNodeName 用于加锁的唯一节点名
+     * @return
+     */
+    boolean exists(String guidNodeName);
 }

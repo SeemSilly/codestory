@@ -23,30 +23,30 @@ public class NodeBlocklessLockTest extends TestBase {
         String guidNodeName = "/single-" + System.currentTimeMillis();
         String clientGuid = "client-0";
 
-        NodeBlocklessLock nodeLock = new NodeBlocklessLock(address);
+        NodeBlocklessLock zooKeeperLock = new NodeBlocklessLock(address);
 
-        boolean assertResult = nodeLock.exists(guidNodeName) == false;
+        boolean assertResult = zooKeeperLock.exists(guidNodeName) == false;
         log.info("锁还未生成，不存在。");
         assert assertResult;
 
-        assertResult = nodeLock.lock(guidNodeName, clientGuid);
+        assertResult = zooKeeperLock.lock(guidNodeName, clientGuid);
         log.info("获取分布式锁应该成功。");
         assert assertResult;
 
-        assertResult = nodeLock.exists(guidNodeName) == true;
+        assertResult = zooKeeperLock.exists(guidNodeName) == true;
         log.info("锁已经生成。");
         assert assertResult;
 
-        assertResult = nodeLock.release(guidNodeName, "error value") == false;
+        assertResult = zooKeeperLock.release(guidNodeName, "error value") == false;
         log.info("clientGuid 不同，应该无法释放锁。");
         assert assertResult;
 
         // clientGuid 相同，释放锁
-        assertResult = nodeLock.release(guidNodeName, clientGuid) == true;
+        assertResult = zooKeeperLock.release(guidNodeName, clientGuid) == true;
         log.info("正常释放锁，应该成功。");
         assert assertResult;
 
-        assertResult = nodeLock.exists(guidNodeName) == false;
+        assertResult = zooKeeperLock.exists(guidNodeName) == false;
         log.info("锁已被删除，应该不存在。");
         assert assertResult;
     }

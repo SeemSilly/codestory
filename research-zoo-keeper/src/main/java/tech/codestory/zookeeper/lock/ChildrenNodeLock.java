@@ -3,6 +3,7 @@ package tech.codestory.zookeeper.lock;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.codestory.zookeeper.ZooKeeperBase;
@@ -10,9 +11,10 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author junyongliao
+ * 基于子节点实现的分布式锁基类
+ * 
+ * @author javacodestory@gmail.com
  * @date 2019/8/19
- * @since 1.0.0
  */
 public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeeperLock {
     private Logger log;
@@ -107,6 +109,31 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
             log.error("InterruptedException", e);
         }
         return result;
+    }
+
+    /**
+     * 锁是否已经存在，容器节点存在，并且有子节点，则说明锁已经存在
+     *
+     * @param guidNodeName 用于加锁的唯一节点名
+     * @return
+     */
+    @Override
+    public boolean exists(String guidNodeName) {
+        boolean exists = false;
+        Stat stat = new Stat();
+        try {
+            getZooKeeper().getData(guidNodeName, false, stat);
+            if (stat.getNumChildren() > 0) {
+                exists = true;
+            }
+        } catch (KeeperException.NoNodeException e) {
+            exists = false;
+        } catch (KeeperException e) {
+            log.error("KeeperException", e);
+        } catch (InterruptedException e) {
+            log.error("InterruptedException", e);
+        }
+        return exists;
     }
 
     /**
