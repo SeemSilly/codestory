@@ -40,13 +40,15 @@ public class NodeBlocklessLock extends ZooKeeperBase implements ZooKeeperLock {
         this.clientGuid = clientGuid;
 
         try {
-            getZooKeeper().create(guidNodeName, clientGuid.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL);
-            byte[] data = getZooKeeper().getData(guidNodeName, false, null);
-            if (data != null && clientGuid.equals(new String(data))) {
-                result = true;
-            } else {
-                log.info("创建node成功，但值不是自己添加的，理论上不应该出现这种情况");
+            if (getZooKeeper().exists(guidNodeName, false) == null) {
+                getZooKeeper().create(guidNodeName, clientGuid.getBytes(),
+                        ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                byte[] data = getZooKeeper().getData(guidNodeName, false, null);
+                if (data != null && clientGuid.equals(new String(data))) {
+                    result = true;
+                } else {
+                    log.info("创建node成功，但值不是自己添加的，理论上不应该出现这种情况");
+                }
             }
         } catch (KeeperException.NodeExistsException e) {
             // 节点已经存在，说明自己失败，什么都不做，直接返回 false
@@ -89,6 +91,7 @@ public class NodeBlocklessLock extends ZooKeeperBase implements ZooKeeperLock {
      * @param guidNodeName 用于加锁的唯一节点名
      * @return
      */
+    @Override
     public boolean exists(String guidNodeName) {
         boolean result = false;
         try {

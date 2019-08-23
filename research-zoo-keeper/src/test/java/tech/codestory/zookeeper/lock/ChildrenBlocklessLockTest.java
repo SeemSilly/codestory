@@ -51,10 +51,9 @@ public class ChildrenBlocklessLockTest extends TestBase {
      * 测试多线程，添加删除是否正常
      */
     @Test
-    public void testChildrenBlocklessMultiThread() throws IOException {
+    public void testChildrenBlocklessMultiThread() throws IOException, InterruptedException {
         String guidNodeName = "/multi-" + System.currentTimeMillis();
         int threadCount = LockClientThread.threadCount;
-        LockClientThread.threadSemaphore = new CountDownLatch(threadCount);
         LockClientThread.successLockSemaphore = new CountDownLatch(1);
 
         LockClientThread[] threads = new LockClientThread[threadCount];
@@ -65,12 +64,10 @@ public class ChildrenBlocklessLockTest extends TestBase {
         for (int i = 0; i < threadCount; i++) {
             threads[i].start();
         }
-        try {
-            LockClientThread.threadSemaphore.await();
-            assert LockClientThread.successLockSemaphore.getCount() == 0;
-        } catch (InterruptedException e) {
-            log.error("InterruptedException", e);
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].join();
         }
+        assert LockClientThread.successLockSemaphore.getCount() == 0;
     }
 
 }

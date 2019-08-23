@@ -21,22 +21,20 @@ public class ZooKeeperQueueTest extends TestBase {
     final Random random = new SecureRandom();
     // 随机生成10-20之间的个数
     final int count = 10 + random.nextInt(10);
-    /** 等待生产者和消费者线程都结束 */
-    private CountDownLatch connectedSemaphore = new CountDownLatch(2);
 
     int producerCount = 0;
     int consumerCount = 0;
 
     @Test
-    public void testQueue() {
+    public void testQueue() throws InterruptedException {
         log.info("开始ZooKeeper队列测试，本次将测试 {} 个数据", count);
-        new QueueProducer().start();
-        new QueueConsumer().start();
-        try {
-            connectedSemaphore.await();
-        } catch (InterruptedException e) {
-            log.error("InterruptedException", e);
-        }
+        QueueProducer queueProducer = new QueueProducer();
+        QueueConsumer queueConsumer = new QueueConsumer();
+        queueProducer.start();
+        queueConsumer.start();
+
+        queueProducer.join();
+        queueConsumer.join();
 
         assert producerCount == count;
         assert consumerCount == count;
@@ -66,7 +64,6 @@ public class ZooKeeperQueueTest extends TestBase {
             } catch (KeeperException e) {
                 log.error("KeeperException", e);
             }
-            connectedSemaphore.countDown();
         }
     }
 
@@ -95,7 +92,6 @@ public class ZooKeeperQueueTest extends TestBase {
                         log.error("InterruptedException", e);
                     }
                 }
-                connectedSemaphore.countDown();
             } catch (IOException e) {
                 log.error("IOException", e);
             }

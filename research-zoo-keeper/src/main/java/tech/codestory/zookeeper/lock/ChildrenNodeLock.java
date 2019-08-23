@@ -3,16 +3,20 @@ package tech.codestory.zookeeper.lock;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.common.StringUtils;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.codestory.zookeeper.ZooKeeperBase;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * 基于子节点实现的分布式锁基类
- * 
+ * 基于子节点实现的分布式锁基类<br>
+ * 为了方便排序，子节点的前缀应该有相同的字符串长度
+ *
  * @author javacodestory@gmail.com
  * @date 2019/8/19
  */
@@ -23,12 +27,56 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
     protected String guidNodeName;
     /** 子节点的前缀 */
     protected String childPrefix = "element";
+
+    /** 用于记录所创建子节点的路径 */
+    protected String elementNodeName;
+
     /** 用于记录所创建子节点的完整路径 */
     protected String elementNodeFullName;
 
     public ChildrenNodeLock(String address) throws IOException {
         super(address);
         log = LoggerFactory.getLogger(getClass().getName());
+    }
+
+    /**
+     * 获取排好序的子节点列表
+     *
+     * @param path
+     * @param watch
+     * @return
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
+    final public List<String> getOrderedChildren(String path, boolean watch)
+            throws KeeperException, InterruptedException {
+        List<String> children = getZooKeeper().getChildren(path, watch);
+        Collections.sort(children, new StringCompare());
+        return children;
+    }
+
+    /**
+     * 在日志中输出子节点
+     *
+     * @param path
+     * @param children
+     */
+    final public void traceOrderedChildren(String path, List<String> children) {
+        if (log.isTraceEnabled()) {
+            log.trace("children : {}", StringUtils.joinStrings(children, ","));
+        }
+    }
+
+    /**
+     * 在日志中输出子节点
+     *
+     * @param path
+     * @param children
+     */
+    final public void infoOrderedChildren(String path, List<String> children) {
+        if (log.isInfoEnabled()) {
+            log.info("children : {}", StringUtils.joinStrings(children, ","));
+        }
     }
 
     /**
@@ -39,20 +87,16 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
      * @throws InterruptedException
      */
     protected String getPrevElementName() throws KeeperException, InterruptedException {
-        List<String> elementNames = getZooKeeper().getChildren(this.guidNodeName, false);
-        long curElementSerial = Long.valueOf(
-                elementNodeFullName.substring((this.guidNodeName + "/" + childPrefix).length()));
+        List<String> elementNames = getOrderedChildren(this.guidNodeName, false);
+        traceOrderedChildren(this.guidNodeName, elementNames);
+
         String prevElementName = null;
-        long prevElementSerial = -1;
         for (String oneElementName : elementNames) {
-            long oneElementSerial = Long.parseLong(oneElementName.substring(childPrefix.length()));
-            if (oneElementSerial < curElementSerial) {
-                // 比当前节点小
-                if (oneElementSerial > prevElementSerial) {
-                    prevElementSerial = oneElementSerial;
-                    prevElementName = oneElementName;
-                }
+            if (this.elementNodeFullName.endsWith(oneElementName)) {
+                // 已经到了当前节点
+                break;
             }
+            prevElementName = oneElementName;
         }
         return prevElementName;
     }
@@ -74,8 +118,13 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
 
         try {
             // 创建子节点并返回带序列号的节点名
-            elementNodeFullName = getZooKeeper().create(this.guidNodeName + "/" + childPrefix,
-                    new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            String fullNodeName = this.guidNodeName + "/" + getChildPrefix();
+            byte[] nodeValue = clientGuid == null ? new byte[0] : clientGuid.getBytes();
+            elementNodeFullName = getZooKeeper().create(fullNodeName, nodeValue,
+                    ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            elementNodeName = elementNodeFullName.substring(guidNodeName.length() + 1);
+
+            log.trace("{} 尝试获取锁", elementNodeName);
 
             boolean lockSuccess = isLockSuccess();
             result = lockSuccess;
@@ -137,6 +186,15 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
     }
 
     /**
+     * 子节点的前缀，子类可以重载
+     * 
+     * @return
+     */
+    protected String getChildPrefix() {
+        return childPrefix;
+    }
+
+    /**
      * 是否加锁成功
      *
      * @return
@@ -144,4 +202,15 @@ public abstract class ChildrenNodeLock extends ZooKeeperBase implements ZooKeepe
      * @throws InterruptedException
      */
     protected abstract boolean isLockSuccess() throws KeeperException, InterruptedException;
+
+    /**
+     * 子节点名称比较，取最后10位进行比较
+     */
+    private class StringCompare implements Comparator<String> {
+        @Override
+        public int compare(String string1, String string2) {
+            return string1.substring(string1.length() - 10)
+                    .compareTo(string2.substring(string2.length() - 10));
+        }
+    }
 }

@@ -12,8 +12,6 @@ public class LockClientThread extends Thread {
     public static int threadCount = 5;
 
     /** 只有一个线程能够成功拿到分布式锁 */
-    public static CountDownLatch threadSemaphore = new CountDownLatch(threadCount);
-    /** 只有一个线程能够成功拿到分布式锁 */
     public static CountDownLatch successLockSemaphore = new CountDownLatch(1);
 
     ZooKeeperLock zooKeeperLock;
@@ -46,6 +44,5 @@ public class LockClientThread extends Thread {
         } else {
             log.info("{} lock() fail", clientGuid);
         }
-        threadSemaphore.countDown();
     }
 }

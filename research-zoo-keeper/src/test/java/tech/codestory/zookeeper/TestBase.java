@@ -10,5 +10,5 @@ public class TestBase {
     /**
      * ZooKeeper 主机地址
      */
-    protected final String address = "192.168.5.128:2181";
+    protected final String address = "localhost:2181";
 }

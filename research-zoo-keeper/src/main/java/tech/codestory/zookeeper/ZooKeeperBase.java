@@ -2,6 +2,8 @@ package tech.codestory.zookeeper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import org.apache.zookeeper.*;
@@ -36,7 +38,7 @@ public class ZooKeeperBase implements Watcher {
 
         Profiler profiler = new Profiler(this.getClass().getName() + " 连接到ZooKeeper");
         profiler.start("开始链接");
-        zooKeeper = new ZooKeeper(address, 3000, this);
+        zooKeeper = new ZooKeeper(address, 30000, this);
         try {
             profiler.start("等待连接成功的Event");
             connectedSemaphore.await();
@@ -85,7 +87,7 @@ public class ZooKeeperBase implements Watcher {
     }
 
     /** 读取ZooKeeper对象，供子类调用 */
-    protected ZooKeeper getZooKeeper() {
+    public ZooKeeper getZooKeeper() {
         return zooKeeper;
     }
 
